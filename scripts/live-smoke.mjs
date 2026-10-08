@@ -5,7 +5,7 @@ let id = 0;
 async function call(provider, method, params) {
   const observed_at = new Date().toISOString(), requestId = ++id;
   try {
-    const response = await fetch(provider, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: requestId, method, params }), signal: AbortSignal.timeout(8000) });
+    const response = await fetch(provider, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: requestId, method, params }), signal: AbortSignal.timeout(8000), redirect: 'error' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const text = await response.text(); if (text.length > 2_000_000) throw new Error('Response too large');
     const body = JSON.parse(text);

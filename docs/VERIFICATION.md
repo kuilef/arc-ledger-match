@@ -9,8 +9,8 @@ other repository or persistent credential was changed.
 | `npm run lint` | Passed, 0 lint errors |
 | `npm run typecheck` | Passed, strict TypeScript |
 | `npm run build` | Passed, static dist generated |
-| `npm test` | **31/31 unit tests passed**, 0 skipped |
-| `npm run test:ui` | **4/4 installed-Chrome browser tests passed** |
+| `npm test` | **35/35 unit tests passed**, 0 skipped |
+| `npm run test:ui` | **8/8 installed-Chrome browser tests passed** |
 | `npm audit --json` | **0 vulnerabilities**, 100 dev packages, no runtime packages |
 | Fresh independent review | Two Important evidence-coherence findings reproduced and fixed with RED→GREEN tests; see REVIEW.md |
 | Public source secret/PII review | No secret patterns/private contact fields found; only synthetic invoices and public mainnet evidence included |
@@ -21,9 +21,22 @@ shared evidence budgets, partial/multiple/overpayment, ambiguous candidates,
 explicit splits, imported-reference priority, date windows/missing data,
 failed/null/wrong-chain RPC, cached-block mismatch, retry/timeout/network/JSON,
 CSV quotes/newlines/formulas, strict malformed/oversized input and forged import
-provenance. UI cases cover demo, split budget rejection, atomic malformed import,
+provenance, a global candidate-link budget (including 5,000 rows per collection
+with 300-character IDs), lossless JSON allocation re-import, and an actual offline
+cross-origin HTTP 307 whose destination receives zero requests.
+UI cases cover demo, split budget rejection, atomic malformed import,
 markup safety, export download, private-path denial, no external demo requests,
-repeat RPC dedup and invalidation when a receipt becomes unavailable.
+repeat RPC dedup and invalidation when a receipt becomes unavailable, delayed
+demo results after Clear/import/RPC, and candidate-budget rejection that preserves
+the complete rendered report and earlier RPC observations.
+
+The parent review regressions first failed on the previous source: unbounded
+candidate expansion, three stale-demo cases and a redirect reaching its second
+local origin. All pass after the minimal fixes. The redirect issue was reproduced
+offline; no live provider redirect or privacy incident was observed. CSV formula
+protection remains enabled; JSON is the documented lossless re-import format.
+The maximum-size unit case stops at link 5,001 and never creates/serializes a
+full Cartesian report. No gigabyte browser stress test was run.
 
 ## Live public mainnet evidence
 
@@ -42,6 +55,9 @@ installed-Chrome profile read public hash
 through **both Circle and dRPC**, yielding two system transfers each, no warning
 or request failure. Repeated reads replaced the same event identities.
 `evidence/browser-demo.png` contains only synthetic invoice/payment records.
+These live observations predate the corrective commit. Live mainnet probes were
+not repeated for that patch; its RPC transport change is covered offline, and
+all eight UI checks run against the updated source with mocked RPC fixtures.
 
 The user's existing Chrome profile, controlled through the browser tool, loaded
 the UI and demo but live reads showed `RPC: Failed to fetch`. A screenshot tool

@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createServer } from 'node:http';
 import { decodeReceipt, SYSTEM, ERC20, TRANSFER, CHAIN } from '../dist/src/arc.js';
 import { readTransactions, PROVIDERS } from '../dist/src/rpc.js';
 import { reconcile, invoicesFrom, allocationsFrom } from '../dist/src/domain.js';
@@ -118,4 +119,28 @@ test('rate limits retry once then terminate; bad hashes/providers/count reject b
   await assert.rejects(readTransactions([hash], PROVIDERS[0], { fetcher: async () => { calls++; return new Response('', { status: 429 }); }, retryDelayMs: 1 }), /429/i);
   assert.equal(calls, 2);
   for (const [hashes, provider] of [[[hash], 'https://evil.example'], [['not-hash'], PROVIDERS[0]], [Array(11).fill(hash), PROVIDERS[0]]]) await assert.rejects(readTransactions(hashes, provider));
+});
+test('RPC transport blocks 307 redirects without sending the selected hash to another origin', async () => {
+  let destinationRequests = 0;
+  const destination = createServer((_req, res) => { destinationRequests++; res.end('{}'); });
+  const origin = createServer(async (req, res) => {
+    let body = ''; for await (const chunk of req) body += chunk;
+    const message = JSON.parse(body);
+    if (message.method === 'eth_chainId') {
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ jsonrpc: '2.0', id: message.id, result: CHAIN }));
+    } else {
+      res.writeHead(307, { Location: `http://127.0.0.1:${destination.address().port}/other-origin` }); res.end();
+    }
+  });
+  const listen = server => new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  try {
+    await listen(destination); await listen(origin);
+    const r = await readTransactions([hash], PROVIDERS[0], { retries: 0, fetcher: (_url, init) => fetch(`http://127.0.0.1:${origin.address().port}/rpc-fixture`, init) });
+    assert.equal(destinationRequests, 0, 'Selected hash must not be forwarded by redirect');
+    assert.equal(r.payments.length, 0);
+    assert.ok(r.observations.some(x => x.status === 'error'));
+  } finally {
+    await Promise.all([origin, destination].map(server => new Promise(resolve => server.close(resolve))));
+  }
 });

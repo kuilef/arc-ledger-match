@@ -1,4 +1,5 @@
 export const MAX_ROWS = 5000;
+export const MAX_CANDIDATE_LINKS = 5000;
 const SCALE = 10n ** 18n;
 export interface Invoice {
   invoice_id: string; expected_amount: string;
@@ -127,6 +128,7 @@ export function reconcile(invoices: Invoice[], payments: Payment[], explicit: Al
     if (!invoice || !constraints(invoice, payment)) warnings.get(payment.payment_id)!.push(`Unresolved imported reference ${payment.invoice_id}: missing invoice or conflicting/missing constraints`);
     else if (remainder > 0n) add({ invoice_id: invoice.invoice_id, payment_id: payment.payment_id, amount: formatAmount(remainder), reason: 'Invoice reference asserted in imported observation; no onchain commercial proof', basis: 'imported-reference' });
   }
+  let candidateLinks = 0;
   return {
     schema_version: 1,
     explanation: 'Statuses reflect explicit local allocations or user-imported invoice references. RPC confirms observed transfer evidence only, never its commercial purpose. Imported payments are unverified. Candidate matches never count as paid.',
@@ -137,7 +139,12 @@ export function reconcile(invoices: Invoice[], payments: Payment[], explicit: Al
     }),
     payments: payments.map(payment => {
       const total = spent.get(payment.payment_id) ?? 0n, remainder = parseAmount(payment.amount) - total;
-      const candidates = remainder > 0n ? invoices.filter(invoice => constraints(invoice, payment) && (invoice.sender || invoice.receiver || parseAmount(invoice.expected_amount) === parseAmount(payment.amount))).map(x => x.invoice_id) : [];
+      const candidates: string[] = [];
+      if (remainder > 0n) for (const invoice of invoices) {
+        if (!constraints(invoice, payment) || (!invoice.sender && !invoice.receiver && parseAmount(invoice.expected_amount) !== parseAmount(payment.amount))) continue;
+        if (candidateLinks === MAX_CANDIDATE_LINKS) throw new Error(`Candidate link budget exceeded (${MAX_CANDIDATE_LINKS} total links). Narrow sender/receiver/date filters or split imports.`);
+        candidateLinks++; candidates.push(invoice.invoice_id);
+      }
       return { ...payment, allocated_amount: formatAmount(total), unallocated_amount: formatAmount(remainder), candidates, resolution: remainder === 0n ? 'allocated' : candidates.length > 1 ? 'ambiguous' : candidates.length === 1 ? 'candidate-only' : 'unallocated', warnings: warnings.get(payment.payment_id)! };
     }),
     allocations: applied,

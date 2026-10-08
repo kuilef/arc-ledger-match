@@ -21,7 +21,7 @@ export async function readTransactions(hashes: string[], provider: string, optio
       const requestId = ++id, observedAt = new Date().toISOString();
       let retryable = false;
       try {
-        const response = await fetcher(provider, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: requestId, method, params }), signal: controller.signal, credentials: 'omit', referrerPolicy: 'no-referrer' });
+        const response = await fetcher(provider, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: requestId, method, params }), signal: controller.signal, credentials: 'omit', referrerPolicy: 'no-referrer', redirect: 'error' });
         if (!response.ok) { retryable = response.status === 429 || response.status === 503; throw new Error(`RPC HTTP ${response.status}`); }
         if (Number(response.headers.get('content-length') ?? 0) > 2_000_000) throw new Error('RPC response exceeds 2 MB');
         const reader = response.body?.getReader(); const chunks: Uint8Array[] = []; let size = 0;

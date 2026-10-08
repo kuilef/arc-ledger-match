@@ -77,3 +77,51 @@ test('repeat RPC evidence never duplicates principal and unavailable reread revo
   await expect(page.locator('#notice')).toContainText('0 observed transfer');
   await expect(page.locator('#invoice-body .status')).toHaveText('unpaid');
 });
+for (const intent of ['clear', 'import', 'read']) {
+  test(`delayed demo cannot overwrite a subsequent ${intent}`, async ({ page }) => {
+    const held = [];
+    await page.route('**/demo/*.json', route => { held.push(route); });
+    await page.route('https://rpc.mainnet.arc.io/', async route => {
+      const request = route.request().postDataJSON();
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ jsonrpc: '2.0', id: request.id, result: request.method === 'eth_chainId' ? '0x13b2' : null }) });
+    });
+    await page.goto('/'); await expect.poll(() => held.length).toBe(3);
+    if (intent === 'clear') await page.getByRole('button', { name: 'Clear ledger' }).click();
+    else if (intent === 'import') {
+      await page.locator('#import-text').fill('invoice_id,expected_amount\nLOCAL-ROW,1');
+      await page.getByRole('button', { name: 'Import rows' }).click();
+    } else {
+      await page.locator('#tx-hashes').fill('0x' + 'a'.repeat(64));
+      await page.getByRole('button', { name: 'Read selected hashes' }).click();
+      await expect(page.locator('#rpc-count')).toContainText('(2 requests)');
+    }
+    await Promise.all(held.map(route => route.continue()));
+    await page.waitForLoadState('networkidle');
+    if (intent === 'import') {
+      await expect(page.locator('#invoice-body tr')).toHaveCount(1);
+      await expect(page.locator('#invoice-body')).toContainText('LOCAL-ROW');
+    } else await expect(page.locator('#invoice-body')).toContainText('No invoices.');
+    if (intent === 'read') await expect(page.locator('#rpc-count')).toContainText('(2 requests)');
+  });
+}
+test('candidate budget rejection preserves the entire ledger and prior RPC evidence', async ({ page }) => {
+  await page.route('https://rpc.mainnet.arc.io/', async route => {
+    const request = route.request().postDataJSON();
+    await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ jsonrpc: '2.0', id: request.id, result: request.method === 'eth_chainId' ? '0x13b2' : null }) });
+  });
+  await page.goto('/'); await expect(page.locator('#invoice-body tr')).toHaveCount(8);
+  await page.locator('#tx-hashes').fill('0x' + 'a'.repeat(64));
+  await page.getByRole('button', { name: 'Read selected hashes' }).click();
+  await expect(page.locator('#rpc-count')).toContainText('(2 requests)');
+  await page.locator('#import-format').selectOption('json');
+  await page.locator('#import-text').fill(JSON.stringify(Array.from({ length: 71 }, (_, n) => ({ invoice_id: `I${n}`, expected_amount: '1' }))));
+  await page.getByRole('button', { name: 'Import rows' }).click();
+  await expect(page.locator('#invoice-body tr')).toHaveCount(71);
+  const before = await page.locator('#full-report').textContent();
+  await page.locator('#import-kind').selectOption('payments');
+  await page.locator('#import-text').fill(JSON.stringify(Array.from({ length: 71 }, (_, n) => ({ payment_id: `P${n}`, amount: '1' }))));
+  await page.getByRole('button', { name: 'Import rows' }).click();
+  await expect(page.locator('#notice')).toContainText('Candidate link budget exceeded (5000 total links)');
+  await expect(page.locator('#full-report')).toHaveText(before);
+  await expect(page.locator('#rpc-count')).toContainText('(2 requests)');
+});

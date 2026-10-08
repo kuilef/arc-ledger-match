@@ -3,10 +3,13 @@
 Only synthetic invoice/payment examples and public chain observations belong
 in this repository. Keep real invoice exports outside it. The app holds records
 in memory, renders untrusted text through textContent, validates known fields,
-bounds imports/receipts and neutralizes spreadsheet formulas in CSV exports.
+bounds imports/receipts and caps the entire report at 5,000 candidate links.
+An over-budget operation leaves the current ledger and RPC evidence unchanged.
+CSV exports neutralize spreadsheet formulas by adding apostrophes and are for
+spreadsheet review; use JSON for lossless allocation re-import.
 No telemetry, remote fonts, CDN scripts, wallets, signing, keys or transfer
 methods exist. RPC endpoints are allowlisted anonymous HTTPS providers, with
-credentials omitted and referrer suppressed. Only selected hashes and the block
+credentials omitted, referrer suppressed and redirects rejected. Only selected hashes and the block
 identifiers needed for receipts leave the browser.
 
 RPC results are observations from a provider, not cryptographic proofs. No

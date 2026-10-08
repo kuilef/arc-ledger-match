@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseAmount, formatAmount, invoicesFrom, paymentsFrom, allocationsFrom, reconcile } from '../dist/src/domain.js';
+import { MAX_ROWS, MAX_CANDIDATE_LINKS, parseAmount, formatAmount, invoicesFrom, paymentsFrom, allocationsFrom, reconcile } from '../dist/src/domain.js';
 import { parseCSV, exportCSV, parseImport } from '../dist/src/formats.js';
 
 const invoice = (id, amount = '100', extra = {}) => ({ invoice_id: id, expected_amount: amount, ...extra });
@@ -89,4 +89,37 @@ test('JSON import remains local asserted input; strict size and invalid JSON err
   assert.equal(parseImport('[{"invoice_id":"A","expected_amount":"1"}]', 'json', 'invoices')[0].invoice_id, 'A');
   assert.throws(() => parseImport('{', 'json', 'invoices'));
   assert.throws(() => parseImport('x'.repeat(2_000_001), 'csv', 'invoices'));
+});
+test('candidate expansion rejects atomically above 5000 total links', () => {
+  // 71 × 71 reproduces overflow safely; no gigabyte report is serialized.
+  const i = invoicesFrom(Array.from({ length: 71 }, (_, n) => invoice(`I${n}`, '1')));
+  const p = paymentsFrom(Array.from({ length: 71 }, (_, n) => payment(`P${n}`, '1')));
+  const before = JSON.stringify([i, p]);
+  assert.throws(() => reconcile(i, p), /Candidate link budget exceeded.*5000/);
+  assert.equal(JSON.stringify([i, p]), before);
+});
+test('candidate budget accepts exactly its bound and rejects maximum-size supported collections safely', () => {
+  const boundary = run(Array.from({ length: 100 }, (_, n) => invoice(`I${n}`, '1')), Array.from({ length: 50 }, (_, n) => payment(`P${n}`, '1')));
+  assert.equal(boundary.payments.reduce((sum, p) => sum + p.candidates.length, 0), MAX_CANDIDATE_LINKS);
+  const rawInvoices = Array.from({ length: MAX_ROWS }, (_, n) => invoice(`I${n.toString().padStart(4, '0')}${'x'.repeat(295)}`, '1'));
+  const rawPayments = Array.from({ length: MAX_ROWS }, (_, n) => payment(`P${n.toString().padStart(4, '0')}${'y'.repeat(295)}`, '1'));
+  const invoiceJSON = JSON.stringify(rawInvoices), paymentJSON = JSON.stringify(rawPayments);
+  assert.ok(invoiceJSON.length < 2_000_000 && paymentJSON.length < 2_000_000);
+  const i = parseImport(invoiceJSON, 'json', 'invoices'), p = parseImport(paymentJSON, 'json', 'payments');
+  assert.equal(i.length, MAX_ROWS); assert.equal(p.length, MAX_ROWS);
+  assert.equal(i[0].invoice_id.length, 300); assert.equal(p[0].payment_id.length, 300);
+  // The guard aborts at link 5001. No full Cartesian report or giant JSON is built.
+  assert.throws(() => reconcile(i, p), /Candidate link budget exceeded.*5000/);
+  assert.equal(i[0].invoice_id, rawInvoices[0].invoice_id);
+  assert.equal(p[MAX_ROWS - 1].payment_id, rawPayments[MAX_ROWS - 1].payment_id);
+});
+test('JSON allocations preserve formula-leading IDs/reasons; spreadsheet CSV is deliberately not lossless', () => {
+  const i = invoicesFrom([invoice('-INV', '1')]), p = paymentsFrom([payment('+PAY', '1')]);
+  const a = [{ invoice_id: '-INV', payment_id: '+PAY', amount: '1', reason: '=reference' }];
+  const jsonRows = parseImport(JSON.stringify(a), 'json', 'allocations');
+  assert.deepEqual(jsonRows, a);
+  assert.equal(reconcile(i, p, jsonRows).invoices[0].status, 'paid');
+  const csvRows = parseImport(exportCSV(['invoice_id', 'payment_id', 'amount', 'reason'], a), 'csv', 'allocations');
+  assert.deepEqual(csvRows[0], { invoice_id: "'-INV", payment_id: "'+PAY", amount: '1', reason: "'=reference" });
+  assert.throws(() => reconcile(i, p, csvRows), /unknown invoice\/payment/);
 });

@@ -44,14 +44,20 @@ Optional fields can be absent or empty. Unknown fields are rejected.
 Addresses use `0x` plus 40 hex digits. Dates are ISO UTC, such as
 `2026-10-08T00:00:00Z`. A window requires an observed timestamp for matching.
 Each collection is bounded to 5,000 rows and each import to 2 MB.
+The report permits at most 5,000 candidate links in total. An operation that
+exceeds this budget is rejected before replacing the current ledger or RPC
+evidence. Narrow sender/receiver/date filters or split the input into batches.
 
 Stable payment IDs prevent reuse of the same imported observation. The `arc:`
 namespace is reserved for RPC evidence. Imports cannot claim RPC provenance.
 Duplicate observations under unrelated IDs cannot be recognized from amounts
 alone: deduplicate your source ledger and do not import an observation again
 through RPC. Report CSVs contain extra evidence fields and are review exports;
-use the supplied input schema to import. Explicit allocations have CSV/JSON
-round trips. Spreadsheet CSV exports prefix formula-leading text with `'`.
+use the supplied input schema to import. **Allocations JSON supports lossless
+re-import.** CSV exports are for spreadsheet review. They prefix formula-leading
+text with `'`, including IDs such as `-INV` and reasons such as `=reference`, so
+exported CSV may no longer match the original IDs. Import preserves apostrophes;
+it cannot safely distinguish spreadsheet protection from legitimate input text.
 
 ## How conclusions work
 
@@ -88,6 +94,8 @@ chain and receipt/block coherence, has an 8-second timeout and one transient
 retry. See [Arc events](https://docs.arc.io/arc/references/usdc-system-events),
 [RPC endpoints](https://docs.arc.io/arc/references/rpc-endpoints) and
 [connection details](https://docs.arc.io/arc/references/connect-to-arc).
+RPC requests reject redirects, preventing a provider redirect from forwarding
+selected hashes to another origin.
 
 Re-reading a selected hash replaces its observed group, never adds it again.
 Unavailable/unsupported evidence is removed from the current ledger; affected

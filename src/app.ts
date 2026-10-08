@@ -13,6 +13,7 @@ let invoices: Invoice[] = [], payments: Payment[] = [], allocations: Allocation[
 let rpc: RpcResult = { payments: [], fees: [], warnings: [], observations: [] };
 let report: Report = reconcile([], []);
 let loading = false;
+let generation = 0;
 const json = (value: unknown) => JSON.stringify(value, null, 2);
 function notice(message: string, error = false): void {
   const node = el('notice'); node.textContent = message; node.className = error ? 'error' : '';
@@ -20,9 +21,10 @@ function notice(message: string, error = false): void {
 function guarded(action: () => void): void {
   try { action(); } catch (error) { notice(error instanceof Error ? error.message : 'Invalid input', true); }
 }
-function commit(nextInvoices: Invoice[], nextPayments: Payment[], nextAllocations: Allocation[]): void {
+function commit(nextInvoices: Invoice[], nextPayments: Payment[], nextAllocations: Allocation[], nextRpc: RpcResult = rpc): void {
   const next = reconcile(nextInvoices, nextPayments, nextAllocations);
-  invoices = nextInvoices; payments = nextPayments; allocations = nextAllocations; report = next; render();
+  generation++;
+  invoices = nextInvoices; payments = nextPayments; allocations = nextAllocations; rpc = nextRpc; report = next; render();
 }
 function cell(row: HTMLTableRowElement, text: string): HTMLTableCellElement {
   const td = row.insertCell(); td.textContent = text; return td;
@@ -82,24 +84,27 @@ function download(name: string, type: string, data: string): void {
 }
 async function demo(): Promise<void> {
   if (loading) return;
+  const revision = ++generation;
   try {
     const [i, p, a] = await Promise.all(['invoices', 'payments', 'allocations'].map(async name => { const response = await fetch(`demo/${name}.json`); if (!response.ok) throw new Error('Demo file unavailable; run npm run build'); return response.json() as Promise<unknown>; }));
-    rpc = { payments: [], fees: [], warnings: [], observations: [] }; commit(invoicesFrom(i), paymentsFrom(p), allocationsFrom(a));
+    if (revision !== generation || loading) return;
+    commit(invoicesFrom(i), paymentsFrom(p), allocationsFrom(a), { payments: [], fees: [], warnings: [], observations: [] });
     el('dataset-label').textContent = 'Synthetic demo · not live chain evidence'; notice('Demo loaded: settled, partial, extra, ambiguous and explicitly split payments.');
-  } catch (error) { notice(error instanceof Error ? error.message : 'Demo load failed', true); }
+  } catch (error) { if (revision === generation) notice(error instanceof Error ? error.message : 'Demo load failed', true); }
 }
 el('demo-button').addEventListener('click', () => { void demo(); });
 el('clear-button').addEventListener('click', () => {
   if (loading) return;
-  rpc = { payments: [], fees: [], warnings: [], observations: [] }; commit([], [], []); el('dataset-label').textContent = 'Empty local ledger'; notice('Ledger cleared from browser memory.');
+  commit([], [], [], { payments: [], fees: [], warnings: [], observations: [] }); el('dataset-label').textContent = 'Empty local ledger'; notice('Ledger cleared from browser memory.');
 });
 el('import-button').addEventListener('click', () => guarded(() => {
   if (loading) return;
+  generation++;
   const text = el<HTMLTextAreaElement>('import-text').value, format = el<HTMLSelectElement>('import-format').value, kind = el<HTMLSelectElement>('import-kind').value;
   if (kind === 'invoices') commit(parseImport(text, format, 'invoices'), payments, []);
   else if (kind === 'payments') {
-    const next = parseImport(text, format, 'payments'); reconcile(invoices, next, []);
-    rpc = { payments: [], fees: [], warnings: [], observations: [] }; commit(invoices, next, []);
+    const next = parseImport(text, format, 'payments');
+    commit(invoices, next, [], { payments: [], fees: [], warnings: [], observations: [] });
   } else commit(invoices, payments, parseImport(text, format, 'allocations'));
   el('dataset-label').textContent = 'Your local ledger · review every source';
   notice(kind === 'allocations' ? 'Explicit allocations replaced.' : `${kind} imported. Explicit allocations reset; re-import them after both collections are loaded.`);
@@ -121,6 +126,7 @@ el('allocation-form').addEventListener('submit', event => {
 });
 el('rpc-button').addEventListener('click', () => {
   if (loading) return;
+  generation++;
   loading = true; const button = el<HTMLButtonElement>('rpc-button'); button.disabled = true; button.textContent = 'Reading bounded receipts…';
   const hashes = el<HTMLTextAreaElement>('tx-hashes').value.trim().split(/[\s,]+/), provider = el<HTMLSelectElement>('rpc-provider').value;
   notice('Reading selected public hashes. Invoice metadata stays in this browser.');
@@ -133,11 +139,11 @@ el('rpc-button').addEventListener('click', () => {
     const invalid = new Set([...totals].filter(([id, amount]) => !observed.has(id) || amount > parseAmount(observed.get(id)!.amount)).map(([id]) => id));
     const nextAllocations = allocations.filter(a => !invalid.has(a.payment_id));
     for (const id of invalid) next.warnings.push(`Invalidated explicit allocations for ${id}: selected evidence unavailable, unsupported or principal changed`);
-    const nextPayments = [...observed.values()]; reconcile(invoices, nextPayments, nextAllocations);
+    const nextPayments = [...observed.values()];
     const feeMap = new Map(rpc.fees.filter(f => !selected.has(f.tx_hash)).map(f => [f.tx_hash, f])); for (const fee of next.fees) feeMap.set(fee.tx_hash, fee);
     if (rpc.observations.length + next.observations.length > 1000) next.warnings.push('RPC history capped at 1000 observations; export before extended sessions');
-    rpc = { payments: nextPayments.filter(p => p.provenance.kind === 'rpc-observed'), fees: [...feeMap.values()], observations: [...rpc.observations, ...next.observations].slice(-1000), warnings: next.warnings };
-    commit(invoices, nextPayments, nextAllocations); el('dataset-label').textContent = 'Local ledger · mainnet observations added';
+    const nextRpc = { payments: nextPayments.filter(p => p.provenance.kind === 'rpc-observed'), fees: [...feeMap.values()], observations: [...rpc.observations, ...next.observations].slice(-1000), warnings: next.warnings };
+    commit(invoices, nextPayments, nextAllocations, nextRpc); el('dataset-label').textContent = 'Local ledger · mainnet observations added';
     notice(`${next.payments.length} observed transfer(s); ${next.warnings.length} warning(s). Review RPC evidence. No invoice was attributed by RPC.`, next.warnings.length > 0);
   }).catch(error => notice(error instanceof Error ? error.message : 'RPC read failed', true)).finally(() => { loading = false; button.disabled = false; button.textContent = 'Read selected hashes'; });
 });

@@ -43,3 +43,12 @@ and node command identity only. Final UI rerun underway after core fixes.
 Using verification-before-completion and finishing-a-development-branch;
 the requested integration is explicitly authorized publication of a new repo.
 No new merge/push/deployment permission question is needed.
+
+Parent follow-up: four minimal corrections implemented after reproducing the
+candidate overflow, stale demo Clear/import/RPC cases and cross-origin redirect.
+Global candidate links capped at 5,000 with atomic state replacement; stale demo
+generation discarded; RPC redirects rejected. JSON preserves exact allocations;
+spreadsheet CSV retains formula protection and is documented as a review export.
+Full local checks passed: lint/typecheck/build, 35/35 units, 8/8 Chrome UI tests,
+zero audit vulnerabilities. Maximum-size unit inputs stop at link 5,001; no
+gigabyte report/UI stress or additional live chain calls were performed.
