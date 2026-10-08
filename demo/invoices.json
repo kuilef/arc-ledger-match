@@ -1,0 +1,10 @@
+[
+  {"invoice_id":"INV-PAID","expected_amount":"120"},
+  {"invoice_id":"INV-PARTIAL","expected_amount":"100"},
+  {"invoice_id":"INV-OVER","expected_amount":"100"},
+  {"invoice_id":"INV-CANDIDATE-A","expected_amount":"50"},
+  {"invoice_id":"INV-CANDIDATE-B","expected_amount":"50"},
+  {"invoice_id":"INV-SPLIT-A","expected_amount":"60"},
+  {"invoice_id":"INV-SPLIT-B","expected_amount":"40"},
+  {"invoice_id":"INV-UNPAID","expected_amount":"30.000000000000000001"}
+]

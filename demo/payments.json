@@ -1,0 +1,8 @@
+[
+  {"payment_id":"demo-paid","amount":"120","invoice_id":"INV-PAID"},
+  {"payment_id":"demo-partial","amount":"40","invoice_id":"INV-PARTIAL"},
+  {"payment_id":"demo-over-1","amount":"80","invoice_id":"INV-OVER"},
+  {"payment_id":"demo-over-2","amount":"30","invoice_id":"INV-OVER"},
+  {"payment_id":"demo-ambiguous","amount":"50"},
+  {"payment_id":"demo-split","amount":"100"}
+]

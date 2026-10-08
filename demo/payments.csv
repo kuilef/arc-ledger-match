@@ -1,0 +1,7 @@
+"payment_id","amount","sender","receiver","occurred_at","invoice_id"
+"demo-paid","120","","","","INV-PAID"
+"demo-partial","40","","","","INV-PARTIAL"
+"demo-over-1","80","","","","INV-OVER"
+"demo-over-2","30","","","","INV-OVER"
+"demo-ambiguous","50","","","",""
+"demo-split","100","","","",""

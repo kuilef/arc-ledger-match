@@ -1,0 +1,4 @@
+[
+  {"invoice_id":"INV-SPLIT-A","payment_id":"demo-split","amount":"60","reason":"Synthetic customer-approved split, part A"},
+  {"invoice_id":"INV-SPLIT-B","payment_id":"demo-split","amount":"40","reason":"Synthetic customer-approved split, part B"}
+]
