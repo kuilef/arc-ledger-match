@@ -11,8 +11,11 @@ signature, transfer, analytics or runtime dependency is involved.
 ## Public demo
 
 Open [Arc Ledger Match](https://arc-ledger-match.pages.dev/). The synthetic
-eight-invoice example loads immediately. Review a candidate, add an explicit
-allocation with a reason, then export the JSON report. Imported/demo payments
+eight-invoice example loads immediately. Results and invoices needing attention
+appear first. The allocation panel starts on the 50-USDC available payment;
+choose an invoice, record your reason, then export the JSON report. The pinned
+data badge distinguishes example, own and mixed records. Import and RPC tools
+are secondary, expandable sections. Imported/demo payments
 remain unverified.
 
 For an optional live read, paste an existing public Arc mainnet transaction hash

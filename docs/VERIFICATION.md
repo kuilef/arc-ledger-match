@@ -108,3 +108,27 @@ wallet connection, onchain deployment/payment, KYC, commercial audit,
 independent finality/quorum proof, mobile real-device/accessibility audit or
 exhaustive history indexing. Grant fit and payouts are not confirmed.
 Only this project's temporary smoke servers were stopped after tests.
+
+
+## Ledger redesign verification — 2026-10-09
+
+The bounded redesign retains the original domain, Arc decoder, formats and RPC
+modules byte-for-byte. Display amounts use string grouping and never convert
+money to Number. The UI prioritizes result/problem rows, labels example/mixed/own
+data persistently, and starts allocation on a payment with a positive remainder.
+
+Local validation passes 43 tests with lint, strict TypeScript and a static build.
+The new result-order/default-selection regressions were observed failing before
+implementation. Browser execution is delegated to exact-commit GitHub Chromium
+CI: the cloud executor has no Playwright Chromium installation, and the separate
+cloud browser cannot reach its loopback server. Do not treat those local browser
+attempts as passes. CI now captures desktop 1440, mobile 390, allocation states,
+and a 720-CSS-pixel reflow equivalent of 200% zoom. That reflow check is not an
+OS-level zoom or real-mobile-device audit. Core/attention text contrast and
+keyboard allocation flow have explicit browser assertions.
+
+After successful validation, audit, Chromium tests and dry-run, CI packages the
+exact tested dist bytes without rebuilding. The Pages ZIP has index.html at its
+root and a separate SHA256 file. Screenshot artifacts are review evidence, not
+production assets. Artifact retention is 14 days; download requires repository
+access. The workflow keeps contents: read and introduces no secrets or grants.

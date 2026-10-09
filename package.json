@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src tests scripts *.mjs",
     "build": "tsc && node scripts/build.mjs",
-    "test": "npm run build && node --test tests/domain.test.mjs tests/arc.test.mjs tests/deployment.test.mjs",
+    "test": "npm run build && node --test tests/domain.test.mjs tests/arc.test.mjs tests/deployment.test.mjs tests/presentation.test.mjs",
     "start": "node scripts/serve.mjs",
     "dev": "npm run build && npm start",
     "test:ui": "playwright test",
