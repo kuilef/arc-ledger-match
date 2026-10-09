@@ -8,7 +8,7 @@
 </head>
 <body>
 <a id="skip-link" href="#ledger">Skip to invoice ledger</a>
-<header class="site-header"><a class="brand" href="./"><span class="mark" aria-hidden="true">a↔</span><span>Arc <b>Ledger Match</b></span></a><div class="header-right"><span class="local">Browser-only · no wallet</span><strong id="dataset-label" class="dataset">Loading example…</strong></div></header>
+<header class="site-header"><a class="brand" href="./"><span class="mark" aria-hidden="true">a↔</span><span>Arc <b>Ledger Match</b></span></a><div class="header-right"><a class="header-about" href="#about">About</a><span class="local">Browser-only · no wallet</span><strong id="dataset-label" class="dataset">Loading example…</strong></div></header>
 <main>
   <section class="intro"><div><div class="eyebrow">USDC RECONCILIATION <span>/</span> ARC MAINNET 5042</div><h1>Reconcile invoices.<br class="mobile-break"> Account for every USDC.</h1><p>Reconcile invoices, resolve unallocated payments, and keep the evidence.</p></div><a class="text-link" href="#data-tools">Use your own records <span aria-hidden="true">↗</span></a></section>
   <div id="summary" class="summary" aria-label="Reconciliation summary"></div>
@@ -33,6 +33,18 @@
     <details id="rpc-tools" class="tool-panel"><summary>Read public Arc transfers <span aria-hidden="true">+</span></summary><div class="tool-content"><p class="muted">Optional, read-only mainnet receipts. Only your selected public hashes go to the chosen RPC. Transfer data never supplies an invoice reference.</p><label>Anonymous RPC provider<select id="rpc-provider"><option>https://rpc.mainnet.arc.io</option><option>https://rpc.drpc.mainnet.arc.io</option></select></label><label>1–10 public transaction hashes<textarea id="tx-hashes" rows="3" spellcheck="false" placeholder="0x… one hash per line"></textarea></label><button id="rpc-button">Read selected hashes</button><p class="muted small">8 second timeout; at most one transient retry. Re-reading replaces the same observed event. ERC20 mirrors add no principal.</p><details><summary>RPC evidence & separate gas fees <span id="rpc-count">(0)</span></summary><pre id="rpc-evidence">No live RPC reads yet.</pre></details></div></details></div>
   </section>
   <details class="report-details"><summary>Full reproducible report</summary><p class="muted">JSON contains inputs, allocations, provenance and raw RPC observations. Keep exports private when your invoice metadata is sensitive.</p><pre id="full-report"></pre></details>
+  <section id="about" class="about-section" tabindex="-1" aria-labelledby="about-heading">
+    <div class="about-overview">
+      <div><div class="eyebrow">05 / ABOUT</div><h2 id="about-heading">About Arc Ledger Match</h2><p class="about-intro">A clear view of what each client payment covers.</p><p>Compare existing USDC invoices with payment records and public Arc mainnet receipts. Intended for freelancers checking client payments, small businesses reviewing receivables, and operations teams resolving unclear transfers.</p></div>
+      <div class="about-purpose"><h3>Understand what still needs a decision.</h3><p>The ledger highlights possible matches, partial payments, overpayments and unassigned amounts. A transfer alone cannot identify its invoice: your invoice references or explicit allocations determine what counts toward each invoice. Split payments and record why, with exact amounts throughout.</p></div>
+    </div>
+    <ol class="about-steps" aria-label="Three steps to reconcile invoices">
+      <li><span class="about-step-number" aria-hidden="true">01</span><div><h3>Import your records</h3><p>Start with the example, or bring invoices and payment records as CSV or JSON.</p></div></li>
+      <li><span class="about-step-number" aria-hidden="true">02</span><div><h3>Review & allocate</h3><p>Check possible matches and optional public receipts. Assign amounts with a reason.</p></div></li>
+      <li><span class="about-step-number" aria-hidden="true">03</span><div><h3>Export the evidence</h3><p>Save the JSON report with your inputs, allocations and source records.</p></div></li>
+    </ol>
+    <div class="about-limits"><h3>Your workspace. Your records.</h3><div><p>Invoice data is processed in browser memory and isn’t saved automatically. Export the JSON report before closing or refreshing. Optional receipt reads send selected public transaction hashes to your chosen RPC provider.</p><p>No wallet connection or signature is needed, and the tool doesn’t move funds. Ledger status records your allocations; it doesn’t certify settlement.</p></div></div>
+  </section>
   <footer><span>Arc Ledger Match <span aria-hidden="true">/</span> Exact amounts. Local decisions.</span><span>No checkout, signatures or financial/tax opinion · <a href="https://docs.arc.io/arc/references/usdc-system-events" target="_blank" rel="noreferrer">Arc event reference ↗</a></span></footer>
 </main>
 </body></html>

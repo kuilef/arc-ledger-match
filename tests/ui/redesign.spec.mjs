@@ -127,3 +127,30 @@ test('reviewing a fully allocated payment selects its associated invoice and exp
   await expect(row.locator('details')).toHaveAttribute('open', '');
   await expect(row.locator('pre')).toContainText('INV-PAID');
 });
+
+for (const width of [1440, 390, 320]) {
+  test(`About is readable and keyboard reachable without changing the ledger at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: width === 1440 ? 1000 : 844 });
+    await ready(page);
+    const reportBefore = await page.locator('#full-report').textContent();
+    const link = page.getByRole('link', { name: 'About', exact: true });
+    await expect(link).toBeVisible();
+    await expect(link).toHaveAttribute('href', '#about');
+    await noOverflow(page);
+    await link.focus();
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(/#about$/);
+    const about = page.locator('#about');
+    await expect(about).toBeVisible();
+    await expect(about).toBeFocused();
+    await expect(about.getByRole('heading', { name: 'About Arc Ledger Match', exact: true })).toBeVisible();
+    for (const text of ['freelancers', 'small businesses', 'operations teams', 'partial payments', 'overpayments', 'unassigned amounts', 'cannot identify its invoice', 'browser memory', 'saved automatically', 'before closing or refreshing', 'public transaction hashes', 'chosen RPC provider', 'No wallet connection or signature', 'doesn’t move funds', 'doesn’t certify settlement']) await expect(about).toContainText(text);
+    await expect(about.locator('ol > li')).toHaveCount(3);
+    expect((await about.boundingBox()).y).toBeGreaterThanOrEqual((await page.locator('.site-header').boundingBox()).height);
+    await noOverflow(page);
+    await expect(page.locator('#full-report')).toHaveText(reportBefore);
+    await mkdir('test-results/screenshots', { recursive: true });
+    await page.screenshot({ path: `test-results/screenshots/about-${width}-viewport.png` });
+    await about.screenshot({ path: `test-results/screenshots/about-${width}-section.png` });
+  });
+}

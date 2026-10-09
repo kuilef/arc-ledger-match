@@ -43,3 +43,15 @@ test('contextual review chooses the existing associated invoice for allocated pa
   assert.equal(chooseInvoice({ payment_id: 'paid', candidates: [] }, [{ invoice_id: 'PARTIAL', remaining_amount: '10' }, { invoice_id: 'PAID', remaining_amount: '0' }], [{ payment_id: 'paid', invoice_id: 'PAID' }]), 'PAID');
   assert.equal(chooseInvoice({ payment_id: 'open', candidates: ['A', 'B'] }, [{ invoice_id: 'A', remaining_amount: '50' }, { invoice_id: 'B', remaining_amount: '50' }], []), 'A');
 });
+
+test('About is a visible header anchor to a readable lower section with truthful scope and privacy', async () => {
+  const html = await readFile('index.html', 'utf8');
+  assert.match(html, /<header[^>]*>[\s\S]*<a[^>]*href="#about"[^>]*>About<\/a>[\s\S]*<\/header>/);
+  assert.match(html, /<section id="about"[^>]*tabindex="-1"[^>]*>/);
+  assert.ok(html.indexOf('id="about"') > html.indexOf('id="full-report"'));
+  assert.ok(html.indexOf('id="about"') < html.indexOf('<footer>'));
+  const about = html.slice(html.indexOf('<section id="about"'), html.indexOf('<footer>'));
+  for (const text of ['freelancers', 'small businesses', 'operations teams', 'partial payments', 'overpayments', 'unassigned amounts', 'cannot identify its invoice', 'browser memory', 'saved automatically', 'before closing or refreshing', 'public transaction hashes', 'chosen RPC provider', 'No wallet connection or signature', 'doesn’t move funds', 'doesn’t certify settlement']) assert.ok(about.includes(text), text);
+  assert.match(about, /<ol[^>]*>[\s\S]*Import[\s\S]*Review[\s\S]*Export[\s\S]*<\/ol>/);
+  assert.doesNotMatch(about, /<details|\shidden(?:\s|=|>)|display:\s*none/);
+});
