@@ -21,3 +21,6 @@ jobs:
       - run: npm run test:ui
         env:
           PW_CHANNEL: chromium
+      - run: npx --yes wrangler@4.149.0 deploy --dry-run
+        env:
+          WRANGLER_SEND_METRICS: 'false'
