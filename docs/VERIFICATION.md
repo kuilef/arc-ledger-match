@@ -132,3 +132,11 @@ exact tested dist bytes without rebuilding. The Pages ZIP has index.html at its
 root and a separate SHA256 file. Screenshot artifacts are review evidence, not
 production assets. Artifact retention is 14 days; download requires repository
 access. The workflow keeps contents: read and introduces no secrets or grants.
+
+
+Exact-commit Chromium run [37927607686](https://github.com/kuilef/arc-ledger-match/actions/runs/37927607686)
+passed on `dc0e99c162ceb0ce58a7ec52efbca16a9370ca88`: 43 Node tests, 13 browser
+tests, dependency audit and Wrangler dry-run. Its actual desktop/mobile screenshots
+were visually inspected. A final small follow-up aligns the initial invoice
+suggestion with the selected available payment and tightens the mobile title;
+the current PR reports its own exact-commit verification and artifact.

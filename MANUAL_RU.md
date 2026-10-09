@@ -133,8 +133,8 @@ bank-ledger-row-2,60,
 
 ## Проверить выбранные публичные транзакции
 
-Укажите от одного до десяти публичных transaction hashes Arc mainnet в Observe
-public transfers, выберите RPC и нажмите Read selected hashes. Проверяется chain
+Укажите от одного до десяти публичных transaction hashes Arc mainnet в **Read public Arc transfers**
+(сворачиваемый раздел в Workspace tools), выберите RPC и нажмите Read selected hashes. Проверяется chain
 5042, успешный receipt, связь log с receipt и block. Only selected hashes,
 chain check и необходимые block hashes уходят к провайдеру. Счета, суммы счетов,
 их номера и причины распределения остаются в браузере.

@@ -93,7 +93,13 @@ function render(): void {
   const paymentSelection = choosePayment(report.payments, el<HTMLSelectElement>('allocation-payment').value);
   select('allocation-payment', report.payments.map(p => ({ value: p.payment_id, label: `${p.payment_id} · ${amountLabel(p.unallocated_amount)} available` })));
   el<HTMLSelectElement>('allocation-payment').value = paymentSelection;
+  const previousInvoice = el<HTMLSelectElement>('allocation-invoice').value;
   select('allocation-invoice', [...report.invoices].sort((a, b) => Number(b.remaining_amount !== '0') - Number(a.remaining_amount !== '0')).map(i => ({ value: i.invoice_id, label: i.invoice_id })));
+  if (!previousInvoice) {
+    const payment = report.payments.find(p => p.payment_id === paymentSelection);
+    const suggestion = payment ? chooseInvoice(payment, report.invoices, report.allocations) : undefined;
+    if (suggestion) el<HTMLSelectElement>('allocation-invoice').value = suggestion;
+  }
   updateAllocationContext();
   const explicit = el('explicit-list'); explicit.replaceChildren();
   for (const allocation of allocations) {

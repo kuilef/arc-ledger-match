@@ -141,4 +141,6 @@ See [verification evidence](docs/VERIFICATION.md),
 Own source: MIT. No source was copied from the prior-art repositories.
 The public demo is hosted on Cloudflare Pages. No grant has been submitted.
 
-![Synthetic local demo](evidence/browser-demo.png)
+Desktop, mobile and allocation-state screenshots are retained with each successful
+[GitHub CI run](https://github.com/kuilef/arc-ledger-match/actions). The original
+pre-redesign screenshot remains in evidence/browser-demo.png as historical evidence.

@@ -18,6 +18,7 @@ test('result-first desktop, available-payment default, contextual next action an
   await ready(page);
   await expect(page.locator('#dataset-label')).toHaveText('Example data');
   await expect(page.locator('#allocation-payment')).toHaveValue('demo-ambiguous');
+  await expect(page.locator('#allocation-invoice')).toHaveValue('INV-CANDIDATE-A');
   await expect(page.locator('#allocation-context')).toContainText('50.00 USDC available');
   await expect(page.locator('#invoice-body tr').first()).toContainText('INV-OVER');
   expect((await page.locator('#invoice-body tr').first().boundingBox()).y).toBeLessThan(650);
