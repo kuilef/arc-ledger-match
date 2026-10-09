@@ -39,9 +39,12 @@ test('Pages package is flat-root, sorted, reproducible and checksummed from test
     'src/app.js': 'console.log("tested build");\n',
     'index.html': '<!doctype html><title>Tested build</title>\n',
     'demo/payments.json': '[]\n',
+    'favicon.ico': 'ico bytes',
+    'assets/logo.png': 'logo bytes',
+    'assets/favicon-32.png': 'favicon bytes',
     '_headers': '/*\n  X-Content-Type-Options: nosniff\n',
   };
-  for (const [name, content] of Object.entries({ ...assets, 'src/app.d.ts': 'export {};', '.env': 'PRIVATE=excluded', 'README.md': 'not a deployable asset' })) {
+  for (const [name, content] of Object.entries({ ...assets, 'src/app.d.ts': 'export {};', '.env': 'PRIVATE=excluded', 'README.md': 'not a deployable asset', 'assets/logo-source.png': 'source-only image', 'assets/README.md': 'source provenance' })) {
     await mkdir(dirname(join(distDir, name)), { recursive: true });
     await writeFile(join(distDir, name), content);
   }
@@ -93,4 +96,37 @@ test('CI publishes only validated deployment bytes and successful UI screenshots
   assert.equal((workflow.match(/archive: false/g) ?? []).length, 2, 'deployable ZIP and checksum are uploaded unchanged');
   assert.equal((workflow.match(/if-no-files-found: error/g) ?? []).length, 3);
   assert.doesNotMatch(workflow, /if:.*(?:always\(|failure\()/, 'success evidence must not be published after a failed check');
+});
+
+// Removing the supplied mark, favicon link, or a copied binary must fail this contract.
+test('built brand uses the supplied PNG and linked multi-resolution ICO without duplicate accessible text', async () => {
+  const html = await readFile('dist/index.html', 'utf8');
+  assert.match(html, /<link rel="icon" type="image\/x-icon" href="favicon\.ico">/);
+  assert.match(html, /<link rel="icon" type="image\/png" sizes="32x32" href="assets\/favicon-32\.png">/);
+  assert.match(html, /<img class="brand-logo" src="assets\/logo\.png" alt="" width="40" height="40">/);
+  assert.doesNotMatch(html, /a↔|class="mark"/);
+  for (const name of ['favicon.ico', 'assets/logo.png', 'assets/favicon-32.png']) assert.deepEqual(await readFile(`dist/${name}`), await readFile(name));
+  const pngSize = bytes => {
+    assert.equal(bytes.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
+    return [bytes.readUInt32BE(16), bytes.readUInt32BE(20)];
+  };
+  assert.deepEqual(pngSize(await readFile('assets/logo.png')), [120, 120]);
+  assert.deepEqual(pngSize(await readFile('assets/favicon-32.png')), [32, 32]);
+  const { createHash } = await import('node:crypto');
+  assert.equal(createHash('sha256').update(await readFile('assets/logo-source.png')).digest('hex'), '160763a7a2b3e91fa10680c5c260462c002a68d1dddc3bbbbbfde9bb9b6ed8e2');
+  const ico = await readFile('favicon.ico');
+  assert.equal(ico.readUInt16LE(0), 0);
+  assert.equal(ico.readUInt16LE(2), 1);
+  assert.equal(ico.readUInt16LE(4), 4);
+  const dimensions = [];
+  for (let i = 0; i < 4; i++) {
+    const offset = 6 + i * 16;
+    const width = ico[offset] || 256, height = ico[offset + 1] || 256;
+    dimensions.push(width);
+    assert.equal(width, height);
+    const length = ico.readUInt32LE(offset + 8), start = ico.readUInt32LE(offset + 12);
+    assert.ok(start >= 70 && start + length <= ico.length);
+    assert.deepEqual(pngSize(ico.subarray(start, start + length)), [width, height]);
+  }
+  assert.deepEqual(dimensions, [16, 32, 48, 64]);
 });

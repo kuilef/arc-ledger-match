@@ -8,11 +8,11 @@ import { pathToFileURL } from 'node:url';
 const archiveName = 'arc-ledger-match-pages.zip';
 const fixedTime = new Date('1980-01-01T00:00:00.000Z');
 // Match the public site's assets, never source declarations or incidental files.
-const deployable = /^(index\.html|styles\.css|_headers|src\/[a-z]+\.js|demo\/[a-z-]+\.(json|csv))$/;
+const deployable = /^(index\.html|styles\.css|_headers|favicon\.ico|assets\/(logo|favicon-32)\.png|src\/[a-z]+\.js|demo\/[a-z-]+\.(json|csv))$/;
 
 export async function packagePages({ distDir = 'dist', outputDir = 'test-results/pages' } = {}) {
   const files = [];
-  for (const directory of ['', 'src', 'demo']) {
+  for (const directory of ['', 'src', 'demo', 'assets']) {
     const directoryPath = join(distDir, directory);
     if (!(await lstat(directoryPath)).isDirectory()) throw new Error(`Asset path must be a regular directory: ${directoryPath}`);
     for (const entry of await readdir(directoryPath, { withFileTypes: true })) {
@@ -23,7 +23,7 @@ export async function packagePages({ distDir = 'dist', outputDir = 'test-results
     }
   }
   files.sort();
-  for (const required of ['index.html', 'styles.css', '_headers', 'src/app.js']) {
+  for (const required of ['index.html', 'styles.css', '_headers', 'src/app.js', 'favicon.ico', 'assets/logo.png', 'assets/favicon-32.png']) {
     if (!files.includes(required)) throw new Error(`Missing deployable asset: ${required}`);
   }
 

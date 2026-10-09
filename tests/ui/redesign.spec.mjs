@@ -154,3 +154,44 @@ for (const width of [1440, 390, 320]) {
     await about.screenshot({ path: `test-results/screenshots/about-${width}-section.png` });
   });
 }
+
+for (const width of [1440, 390, 320]) {
+  test(`supplied logo and favicons load with accessible brand and no header overflow at ${width}px`, async ({ page, request }) => {
+    await page.setViewportSize({ width, height: width === 1440 ? 1000 : 844 });
+    await ready(page);
+    const brand = page.getByRole('link', { name: 'Arc Ledger Match', exact: true });
+    await expect(brand).toBeVisible();
+    const logo = brand.locator('img');
+    await expect(logo).toHaveAttribute('alt', '');
+    await expect(logo).toHaveAttribute('src', 'assets/logo.png');
+    expect(await logo.evaluate(img => img.complete && img.naturalWidth === 120 && img.naturalHeight === 120)).toBe(true);
+    const box = await logo.boundingBox();
+    expect(box.width).toBe(width === 1440 ? 40 : 32);
+    expect(box.height).toBe(box.width);
+    await expect(page.locator('.mark')).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'About', exact: true })).toBeVisible();
+    await expect(page.locator('#dataset-label')).toBeVisible();
+    const header = await page.locator('.site-header').boundingBox();
+    for (const target of [brand, page.locator('.header-right')]) {
+      const bounds = await target.boundingBox();
+      expect(bounds.x).toBeGreaterThanOrEqual(0);
+      expect(bounds.x + bounds.width).toBeLessThanOrEqual(width);
+      expect(bounds.y + bounds.height).toBeLessThanOrEqual(header.height);
+    }
+    for (const [path, type] of [['/favicon.ico', 'image/x-icon'], ['/assets/favicon-32.png', 'image/png'], ['/assets/logo.png', 'image/png']]) {
+      const response = await request.get(path);
+      expect(response.status()).toBe(200);
+      expect(response.headers()['content-type']).toBe(type);
+      expect((await response.body()).length).toBeGreaterThan(100);
+    }
+    await expect(page.locator('link[rel="icon"][type="image/x-icon"]')).toHaveAttribute('href', 'favicon.ico');
+    await expect(page.locator('link[rel="icon"][type="image/png"]')).toHaveAttribute('href', 'assets/favicon-32.png');
+    expect((await request.get('/assets/logo-source.png')).status()).toBe(404);
+    await brand.focus();
+    await expect(brand).toBeFocused();
+    await noOverflow(page);
+    await mkdir('test-results/screenshots', { recursive: true });
+    await page.screenshot({ path: `test-results/screenshots/logo-${width}-viewport.png` });
+    await page.locator('.site-header').screenshot({ path: `test-results/screenshots/logo-${width}-header.png` });
+  });
+}
