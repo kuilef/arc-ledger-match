@@ -7,6 +7,10 @@ async function ready(page) {
 }
 async function capture(page, name) {
   await mkdir('test-results/screenshots', { recursive: true });
+  await page.screenshot({ path: `test-results/screenshots/${name}-viewport.png` });
+  // Normalize scroll before full-page capture so fixed/sticky elements do not
+  // appear in the middle of a stitched document screenshot.
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({ path: `test-results/screenshots/${name}.png`, fullPage: true });
 }
 async function noOverflow(page) {
