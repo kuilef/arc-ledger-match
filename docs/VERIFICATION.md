@@ -1,5 +1,28 @@
 # Verification — 2026-10-08
 
+## Hosted follow-up — 2026-10-09
+
+Public demo: https://arc-ledger-match.pages.dev/
+Deployment ID: `c63c5031-dfe0-4709-b2fa-e9633627428f`.
+The deployment ZIP is unchanged from the validated source at commit
+`2293194172f86dfab8438ffa145d4236073358ea`. Its GitHub CI passed, including
+the actual 8-test Chromium UI suite against a local server.
+
+An independent Chrome checked the public Pages origin with real direct RPC
+reads of `0x691405ed18faaf588878725c5df92a338cad75fdec5b1f38250d9073ae7ad9c4`.
+Official RPC at 09:56:23 UTC and dRPC at 09:57:45 UTC each yielded two distinct
+system transfers, zero warnings and three requests. Each transfer is
+0.041679409011850554 USDC, log indices 3 and 4. Re-reading via the second
+provider replaced the observations without duplicating principal. JSON export
+parsed identically to the displayed report apart from its refreshed generated_at.
+Separate deployment QA checked eight demo rows, allocation and security headers.
+
+Another browser/network connection produced Failed to fetch for both providers.
+That path's exact cause remains unresolved; successful independent hosted reads
+do not imply universal availability. See CLOUDFLARE_RU.md for diagnostics.
+All observed transfers remain provider assertions with no invoice attribution,
+commercial-settlement or finality proof. The original local verification follows.
+
 Environment: amethyst, Windows, Node v20.19.3, npm 11.4.2, installed Chrome.
 Only the new task workspace was edited. No system setting, wallet, service,
 other repository or persistent credential was changed.

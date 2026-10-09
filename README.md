@@ -8,6 +8,20 @@ The browser processes invoice metadata in memory. Only public transaction hashes
 you select go to the chosen Arc mainnet RPC. No account, wallet connection, key,
 signature, transfer, analytics or runtime dependency is involved.
 
+## Public demo
+
+Open [Arc Ledger Match](https://arc-ledger-match.pages.dev/). The synthetic
+eight-invoice example loads immediately. Review a candidate, add an explicit
+allocation with a reason, then export the JSON report. Imported/demo payments
+remain unverified.
+
+For an optional live read, paste an existing public Arc mainnet transaction hash
+and select **Read selected hashes**. Only those hashes go to the selected fixed
+RPC; invoice metadata stays in the browser. Both listed providers were checked
+successfully from the hosted demo on 2026-10-09. Browser/network-specific fetch
+failures were also observed on another connection, so availability is not
+guaranteed. See [deployment checks and troubleshooting](docs/CLOUDFLARE_RU.md).
+
 ## Run
 
 Requires Node.js **20.19+** (22 recommended), npm and a modern browser.
@@ -122,6 +136,6 @@ See [verification evidence](docs/VERIFICATION.md),
 [Russian manual](MANUAL_RU.md), [grant preparation](GRANTS_RU.md),
 [prior art and sources](docs/SOURCES.md) and [security limits](SECURITY.md).
 Own source: MIT. No source was copied from the prior-art repositories.
-Public hosting and grant submission are user-only steps; neither has been done.
+The public demo is hosted on Cloudflare Pages. No grant has been submitted.
 
 ![Synthetic local demo](evidence/browser-demo.png)

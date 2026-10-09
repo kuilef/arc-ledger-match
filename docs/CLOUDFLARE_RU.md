@@ -1,5 +1,30 @@
 # Cloudflare Pages Free: статическое демо
 
+## Опубликованное демо
+
+Адрес: https://arc-ledger-match.pages.dev/.
+Deployment: `c63c5031-dfe0-4709-b2fa-e9633627428f`.
+
+При открытии появляются восемь синтетических invoices. Выберите candidate,
+добавьте explicit allocation с причиной и скачайте Export report JSON.
+Для live-проверки вставьте уже существующий публичный mainnet hash в
+Observe public transfers и нажмите Read selected hashes. Не создавайте перевод.
+
+2026-10-09 в независимом Chrome с этого pages.dev origin успешно прочитан hash
+`0x691405ed18faaf588878725c5df92a338cad75fdec5b1f38250d9073ae7ad9c4`:
+в 09:56:23 UTC через official RPC и в 09:57:45 UTC через dRPC — два отдельных
+system Transfer по `0.041679409011850554` USDC, logIndex 3/4, без предупреждений.
+Каждый проход занял три RPC-запроса; повтор не удвоил principal. JSON download
+совпал с отображёнными данными; generated_at обновился при экспорте.
+Это наблюдения провайдеров, а не commercial settlement или finality proof.
+
+На другой браузерной/сетевой связке в тот же день оба RPC возвращали
+`Failed to fetch`. Причина там пока не установлена. Успех с того же публичного
+origin в независимом браузере не подтверждает доступность из любой сети.
+При таком сбое сохраните точный Console/Network error и OPTIONS/POST status:
+это может различить CORS, DNS/TLS, локальный фильтр и ответ провайдера.
+Не отключайте защиту браузера и не подменяйте ошибку синтетическим live-ответом.
+
 Публикуйте только содержимое `dist` через Pages Direct Upload в подтверждённом
 аккаунте Free. Ожидаемый адрес: `arc-ledger-match.pages.dev`, если имя свободно.
 Домен, Worker script, KV, secrets, API token и OAuth grant не нужны.
