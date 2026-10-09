@@ -1,32 +1,38 @@
 import { test, expect } from '@playwright/test';
+
+async function openTools(page) {
+  for (const id of ['import-tools', 'rpc-tools']) {
+    if (!(await page.locator(`#${id}`).evaluate(node => node.open))) await page.locator(`#${id} > summary`).click();
+  }
+}
 test('synthetic demo, evidence, ambiguity and exact split report', async ({ page }) => {
   const external = [];
   page.on('request', req => { if (!req.url().startsWith('http://127.0.0.1:5194')) external.push(req.url()); });
-  await page.goto('/');
+  await page.goto('/'); await openTools(page);
   await expect(page.locator('#invoice-body tr')).toHaveCount(8);
-  await expect(page.locator('#invoice-body tr').filter({ hasText: 'INV-PARTIAL' })).toContainText('partial');
-  await expect(page.locator('#invoice-body tr').filter({ hasText: 'INV-OVER' })).toContainText('overpaid');
-  await expect(page.locator('#payment-body tr').filter({ hasText: 'demo-ambiguous' })).toContainText('ambiguous');
+  await expect(page.locator('#invoice-body tr').filter({ hasText: 'INV-PARTIAL' })).toContainText('Partly allocated');
+  await expect(page.locator('#invoice-body tr').filter({ hasText: 'INV-OVER' })).toContainText('Overallocated');
+  await expect(page.locator('#payment-body tr').filter({ hasText: 'demo-ambiguous' })).toContainText('Needs a decision');
   await page.locator('#allocation-payment').selectOption('demo-ambiguous');
   await page.locator('#allocation-invoice').selectOption('INV-CANDIDATE-A');
   await page.locator('#allocation-amount').fill('25');
   await page.locator('#allocation-reason').fill('Customer confirmed half by email; synthetic example');
-  await page.getByRole('button', { name: 'Save allocation' }).click();
-  await expect(page.locator('#invoice-body tr').filter({ hasText: 'INV-CANDIDATE-A' })).toContainText('partial');
+  await page.getByRole('button', { name: /Save allocation/ }).click();
+  await expect(page.locator('#invoice-body tr').filter({ hasText: 'INV-CANDIDATE-A' })).toContainText('Partly allocated');
   await page.locator('#allocation-invoice').selectOption('INV-CANDIDATE-B');
   await page.locator('#allocation-amount').fill('26');
-  await page.getByRole('button', { name: 'Save allocation' }).click();
+  await page.getByRole('button', { name: /Save allocation/ }).click();
   await expect(page.locator('#notice')).toContainText('exceeds payment principal');
-  await expect(page.locator('#invoice-body tr').filter({ hasText: 'INV-CANDIDATE-B' })).toContainText('unpaid');
+  await expect(page.locator('#invoice-body tr').filter({ hasText: 'INV-CANDIDATE-B' })).toContainText('Unallocated');
   await page.locator('#allocation-amount').fill('25');
-  await page.getByRole('button', { name: 'Save allocation' }).click();
+  await page.getByRole('button', { name: /Save allocation/ }).click();
   const download = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export report JSON' }).click();
+  await page.getByRole('button', { name: /Export report JSON/ }).click();
   expect((await download).suggestedFilename()).toBe('arc-ledger-report.json');
   expect(external).toEqual([]);
 });
 test('invalid import is atomic and markup is rendered as text', async ({ page }) => {
-  await page.goto('/'); await expect(page.locator('#invoice-body tr')).toHaveCount(8);
+  await page.goto('/'); await openTools(page); await expect(page.locator('#invoice-body tr')).toHaveCount(8);
   await page.locator('#import-kind').selectOption('invoices');
   await page.locator('#import-format').selectOption('csv');
   await page.locator('#import-text').fill('invoice_id,expected_amount\nA,not-an-amount');
@@ -40,7 +46,7 @@ test('invalid import is atomic and markup is rendered as text', async ({ page })
   await expect(page.locator('#invoice-body img')).toHaveCount(0);
 });
 test('unknown hash fails visibly and local server denies private paths', async ({ page, request }) => {
-  await page.goto('/'); await page.locator('#tx-hashes').fill('bad');
+  await page.goto('/'); await openTools(page); await page.locator('#tx-hashes').fill('bad');
   await page.getByRole('button', { name: 'Read selected hashes' }).click();
   await expect(page.locator('#notice')).toContainText('hash');
   expect((await request.get('/.env')).status()).toBe(404);
@@ -60,7 +66,7 @@ test('repeat RPC evidence never duplicates principal and unavailable reread revo
     }
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ jsonrpc: '2.0', id: r.id, result }) });
   });
-  await page.goto('/'); await expect(page.locator('#invoice-body tr')).toHaveCount(8);
+  await page.goto('/'); await openTools(page); await expect(page.locator('#invoice-body tr')).toHaveCount(8);
   await page.getByRole('button', { name: 'Clear ledger' }).click();
   await page.locator('#import-text').fill('invoice_id,expected_amount\nPRIVATE-INVOICE,1');
   await page.getByRole('button', { name: 'Import rows' }).click();
@@ -71,11 +77,11 @@ test('repeat RPC evidence never duplicates principal and unavailable reread revo
     await expect(page.locator('#payment-body tr')).toHaveCount(1);
   }
   await page.locator('#allocation-amount').fill('1'); await page.locator('#allocation-reason').fill('local invoice ledger reference');
-  await page.getByRole('button', { name: 'Save allocation' }).click();
-  await expect(page.locator('#invoice-body .status')).toHaveText('paid');
+  await page.getByRole('button', { name: /Save allocation/ }).click();
+  await expect(page.locator('#invoice-body .status')).toHaveText('Fully allocated');
   await page.getByRole('button', { name: 'Read selected hashes' }).click();
   await expect(page.locator('#notice')).toContainText('0 observed transfer');
-  await expect(page.locator('#invoice-body .status')).toHaveText('unpaid');
+  await expect(page.locator('#invoice-body .status')).toHaveText('Unallocated');
 });
 for (const intent of ['clear', 'import', 'read']) {
   test(`delayed demo cannot overwrite a subsequent ${intent}`, async ({ page }) => {
@@ -85,7 +91,7 @@ for (const intent of ['clear', 'import', 'read']) {
       const request = route.request().postDataJSON();
       await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ jsonrpc: '2.0', id: request.id, result: request.method === 'eth_chainId' ? '0x13b2' : null }) });
     });
-    await page.goto('/'); await expect.poll(() => held.length).toBe(3);
+    await page.goto('/'); await openTools(page); await expect.poll(() => held.length).toBe(3);
     if (intent === 'clear') await page.getByRole('button', { name: 'Clear ledger' }).click();
     else if (intent === 'import') {
       await page.locator('#import-text').fill('invoice_id,expected_amount\nLOCAL-ROW,1');
@@ -109,7 +115,7 @@ test('candidate budget rejection preserves the entire ledger and prior RPC evide
     const request = route.request().postDataJSON();
     await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ jsonrpc: '2.0', id: request.id, result: request.method === 'eth_chainId' ? '0x13b2' : null }) });
   });
-  await page.goto('/'); await expect(page.locator('#invoice-body tr')).toHaveCount(8);
+  await page.goto('/'); await openTools(page); await expect(page.locator('#invoice-body tr')).toHaveCount(8);
   await page.locator('#tx-hashes').fill('0x' + 'a'.repeat(64));
   await page.getByRole('button', { name: 'Read selected hashes' }).click();
   await expect(page.locator('#rpc-count')).toContainText('(2 requests)');

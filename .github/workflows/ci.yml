@@ -21,3 +21,30 @@ jobs:
       - run: npm run test:ui
         env:
           PW_CHANNEL: chromium
+      - run: npx --yes wrangler@4.149.0 deploy --dry-run
+        env:
+          WRANGLER_SEND_METRICS: 'false'
+      # Package the same dist/ bytes exercised above; do not rebuild between tests and upload.
+      - name: Package tested Cloudflare Pages assets
+        run: node scripts/package-pages.mjs
+      - name: Upload deployable Pages ZIP
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          path: test-results/pages/arc-ledger-match-pages.zip
+          archive: false
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload Pages SHA256 checksum
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          path: test-results/pages/arc-ledger-match-pages.zip.sha256
+          archive: false
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload successful UI screenshots
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: arc-ledger-match-ui-screenshots
+          path: test-results/**/*.png
+          if-no-files-found: error
+          retention-days: 14

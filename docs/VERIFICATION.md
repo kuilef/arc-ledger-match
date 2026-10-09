@@ -1,5 +1,28 @@
 # Verification — 2026-10-08
 
+## Hosted follow-up — 2026-10-09
+
+Public demo: https://arc-ledger-match.pages.dev/
+Deployment ID: `c63c5031-dfe0-4709-b2fa-e9633627428f`.
+The deployment ZIP is unchanged from the validated source at commit
+`2293194172f86dfab8438ffa145d4236073358ea`. Its GitHub CI passed, including
+the actual 8-test Chromium UI suite against a local server.
+
+An independent Chrome checked the public Pages origin with real direct RPC
+reads of `0x691405ed18faaf588878725c5df92a338cad75fdec5b1f38250d9073ae7ad9c4`.
+Official RPC at 09:56:23 UTC and dRPC at 09:57:45 UTC each yielded two distinct
+system transfers, zero warnings and three requests. Each transfer is
+0.041679409011850554 USDC, log indices 3 and 4. Re-reading via the second
+provider replaced the observations without duplicating principal. JSON export
+parsed identically to the displayed report apart from its refreshed generated_at.
+Separate deployment QA checked eight demo rows, allocation and security headers.
+
+Another browser/network connection produced Failed to fetch for both providers.
+That path's exact cause remains unresolved; successful independent hosted reads
+do not imply universal availability. See CLOUDFLARE_RU.md for diagnostics.
+All observed transfers remain provider assertions with no invoice attribution,
+commercial-settlement or finality proof. The original local verification follows.
+
 Environment: amethyst, Windows, Node v20.19.3, npm 11.4.2, installed Chrome.
 Only the new task workspace was edited. No system setting, wallet, service,
 other repository or persistent credential was changed.
@@ -85,3 +108,35 @@ wallet connection, onchain deployment/payment, KYC, commercial audit,
 independent finality/quorum proof, mobile real-device/accessibility audit or
 exhaustive history indexing. Grant fit and payouts are not confirmed.
 Only this project's temporary smoke servers were stopped after tests.
+
+
+## Ledger redesign verification — 2026-10-09
+
+The bounded redesign retains the original domain, Arc decoder, formats and RPC
+modules byte-for-byte. Display amounts use string grouping and never convert
+money to Number. The UI prioritizes result/problem rows, labels example/mixed/own
+data persistently, and starts allocation on a payment with a positive remainder.
+
+Local validation passes 43 tests with lint, strict TypeScript and a static build.
+The new result-order/default-selection regressions were observed failing before
+implementation. Browser execution is delegated to exact-commit GitHub Chromium
+CI: the cloud executor has no Playwright Chromium installation, and the separate
+cloud browser cannot reach its loopback server. Do not treat those local browser
+attempts as passes. CI now captures desktop 1440, mobile 390, allocation states,
+and a 720-CSS-pixel reflow equivalent of 200% zoom. That reflow check is not an
+OS-level zoom or real-mobile-device audit. Core/attention text contrast and
+keyboard allocation flow have explicit browser assertions.
+
+After successful validation, audit, Chromium tests and dry-run, CI packages the
+exact tested dist bytes without rebuilding. The Pages ZIP has index.html at its
+root and a separate SHA256 file. Screenshot artifacts are review evidence, not
+production assets. Artifact retention is 14 days; download requires repository
+access. The workflow keeps contents: read and introduces no secrets or grants.
+
+
+Exact-commit Chromium run [37927607686](https://github.com/kuilef/arc-ledger-match/actions/runs/37927607686)
+passed on `dc0e99c162ceb0ce58a7ec52efbca16a9370ca88`: 43 Node tests, 13 browser
+tests, dependency audit and Wrangler dry-run. Its actual desktop/mobile screenshots
+were visually inspected. A final small follow-up aligns the initial invoice
+suggestion with the selected available payment and tightens the mobile title;
+the current PR reports its own exact-commit verification and artifact.
